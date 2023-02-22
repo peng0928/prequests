@@ -10,8 +10,8 @@
 -------------------------------------------------
 """
 from .requestXpath import prequests
+from .pxpath import Xpath
 
 requests = prequests()
 
 __author__ = 'penr'
-__version__ = 0.1
