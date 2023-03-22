@@ -1,6 +1,7 @@
 from urllib.parse import urljoin
-import re, time, logging
+import re, time, logging, copy
 from lxml import etree
+from datetime import timedelta, datetime
 
 
 class Xpath(object):
@@ -123,27 +124,17 @@ class Xpath(object):
     def process_date(self, data=None, rule=None):
         if len(data) == 0:
             return None
-        if len(data) == 13 and '.' not in data and '-' not in data and '/' not in data:
+        data = parse_txt(data)
+        if len(data) == 13 and '-' not in data:
             localtime = time.localtime(int(data) / 1000)
             date = time.strftime("%Y-%m-%d %H:%M:%S", localtime)
             return date
-
-        if len(data) == 10 and '.' not in data and '-' not in data and '/' not in data:
+        if len(data) == 10 and '-' not in data:
             localtime = time.localtime(int(data))
             date = time.strftime("%Y-%m-%d %H:%M:%S", localtime)
             return date
-
         else:
-            patten = r'(\d{1,4}[-|/|.|年]\d{1,2}[-|/|.|月]\d{1,2}[-|/|.|日]*)[\s]*([\d{1,2}]*[:|时]*[\d{1,2}]*[:分]*[\d{1,2}]*[秒]*)'
-            result = re.findall(patten, data)
-            if not result:
-                if rule != None:
-                    patten = '.*?%s.*?(\d{1,4}[-|/|.|年]\d{1,2}[-|/|.|月]\d{1,2}[-|/|.|日]*)[\s]*([\d{1,2}]*[:|时]*[\d{1,2}]*[:分]*[\d{1,2}]*[秒]*)' % rule
-                    result = re.findall(patten, data)
-
-            result = ' '.join(result[0]).replace('.', '-').replace('/', '-').replace('年', '-').replace('月',
-                                                                                                        '-').replace(
-                '日', '').strip()
+            result = parse_time(data, rule)
             result = result if result else None
             return result
 
@@ -167,6 +158,7 @@ class Xpath(object):
             return None
 
     def xpath_filter(self, response=None, filter=None):
+        response = copy.deepcopy(response)
         filter_num = filter.split('|')
         if len(filter_num) > 1:
             filter = filter.split('|')
@@ -178,3 +170,60 @@ class Xpath(object):
         for e in ele:
             e.getparent().remove(e)
         return response
+
+
+def parse_txt(data):
+    data = re.sub('(年|月|/|\.)', '-', data)
+    data = re.sub('(日|秒)', ' ', data)
+    data = re.sub('(时|分)', ':', data)
+    while '  ' in data:
+        data = data.replace('  ', ' ')
+    return data
+
+
+def parse_time(s_time, rule=None):
+    result_time = ''
+    pdt = r'(\d{1,4}-\d{1,2}-\d{1,2} \d{1,2}[:\d{1,2}]+)'
+    pd = r'(\d{1,4}-\d{1,2}-\d{1,2})'
+    # 1、2017-06-15
+    rule = parse_txt(rule) if rule else ''
+    if re.findall(r'\d{1,4}-\d{1,2}-\d{1,2}', s_time):
+        result_time = re.findall(
+            r'%s.*?(\d{1,4}-\d{1,2}-\d{1,2} \d{1,2}[:\d{1,2}]+|\d{1,4}-\d{1,2}-\d{1,2})' % (rule), s_time)
+        if not result_time:
+            result_time = re.findall(pdt, s_time)
+        if not result_time:
+            result_time = re.findall(pd, s_time)
+        result_time = result_time[0] if result_time else None
+    # 6天前
+    elif u'天前' in s_time:
+        days = re.findall(u'(\d+)天前', s_time)[0]
+        result_time = (datetime.now() - timedelta(days=int(days))).strftime("%Y-%m-%d %H:%M:%S")
+
+    # 昨天 18:03
+    elif u'昨天' in s_time:
+        last_time = re.findall(r'.*?(\d{1,2}:\d{1,2})', s_time)[0]
+        days_ago = datetime.now() - timedelta(days=int(1))
+        y_m_d = str(days_ago.year) + '-' + str(days_ago.month) + '-' + str(days_ago.day)
+        _time = y_m_d + ' ' + last_time
+        result_time = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(_time, "%Y-%m-%d %H:%M"))
+
+    # 28分钟前
+    elif u'分钟前' in s_time:
+        minutes = re.findall(u'(\d+)分钟', s_time)[0]
+        minutes_ago = (datetime.now() - timedelta(minutes=int(minutes))).strftime("%Y-%m-%d %H:%M:%S")
+        result_time = minutes_ago
+
+    # 06-29
+    elif re.findall(r'\d{1,2}-\d{1,2}', s_time) and len(s_time) <= 5:
+        now_year = str(datetime.now().year)
+        _time = now_year + '-' + s_time
+        result_time = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(_time, "%Y-%m-%d"))
+
+    # 1小时前
+    elif u'小时前' in s_time:
+        hours = re.findall(u'(\d+)小时前', s_time)[0]
+        hours_ago = (datetime.now() - timedelta(hours=int(hours))).strftime("%Y-%m-%d %H:%M:%S")
+        result_time = hours_ago
+
+    return result_time
