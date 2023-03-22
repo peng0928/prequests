@@ -8,7 +8,7 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 setup(
     name="requestXpath",
-    version='0.1.1.4',
+    version='0.1.1.6',
     author="penr",
     author_email="1944542244@qq.com",
     description="Inherit the requests module, add xpath functionality to expand the API, and handle request failures and retries",

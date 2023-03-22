@@ -1,0 +1,12 @@
+LICENSE.txt
+README.md
+setup.py
+requestXpath/__init__.py
+requestXpath/pxpath.py
+requestXpath/requestXpath.py
+requestXpath/useragent.py
+requestXpath.egg-info/PKG-INFO
+requestXpath.egg-info/SOURCES.txt
+requestXpath.egg-info/dependency_links.txt
+requestXpath.egg-info/requires.txt
+requestXpath.egg-info/top_level.txt

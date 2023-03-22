@@ -1,3 +1,17 @@
+Metadata-Version: 2.1
+Name: requestXpath
+Version: 0.1.1.6
+Summary: Inherit the requests module, add xpath functionality to expand the API, and handle request failures and retries
+Home-page: https://github.com/peng0928/prequests
+Author: penr
+Author-email: 1944542244@qq.com
+License: MIT
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
 # *Welcome to requestXpath !*
 
 ## *Introduce*
